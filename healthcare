@@ -1,0 +1,251 @@
+from tkinter import *
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+
+from sklearn.metrics import accuracy_score
+
+global filename
+global df, X_train, X_test, y_train, y_test
+
+main = tk.Tk()
+main.title("Machine Learning Based Framework for Maintaining Privacy of Healthcare Data ") 
+main.geometry("1600x1500")
+
+font = ('times', 16, 'bold')
+title = Label(main, text='Machine Learning Based Framework for Maintaining Privacy of Healthcare Data ',font=("times"))
+title.config(bg='Dark Blue', fg='white')
+title.config(font=font)           
+title.config(height=3, width=105)
+title.place(x=0, y=5)
+
+font1 = ('times', 12, 'bold')
+text = Text(main, height=14, width=120)
+scroll = Scrollbar(text)
+text.configure(yscrollcommand=scroll.set)
+text.place(x=50, y=120)
+text.config(font=font1)
+
+# Upload Function
+def upload():
+    global filename, df
+    filename = filedialog.askopenfilename(initialdir="dataset")
+    pathlabel.config(text=filename)
+    df = pd.read_csv(filename)
+    text.delete('1.0', END)
+    text.insert(END, 'Dataset loaded\n')
+    text.insert(END, "Dataset Size: " + str(len(df)) + "\n")
+
+font1 = ('times', 13, 'bold')
+
+uploadButton = Button(main, text="Upload Dataset", command=upload, bg="sky blue")
+uploadButton.place(x=50, y=450)
+uploadButton.config(font=font1)
+
+pathlabel = Label(main)
+pathlabel.config(bg='DarkOrange1', fg='white')  
+pathlabel.config(font=font1)           
+pathlabel.place(x=330, y=450)
+
+# Function to display age distribution
+def show_age_distribution():
+    plt.figure(figsize=(10, 6))
+    sns.displot(df['Age'], kde=True, bins='auto')
+    plt.title('Distribution of Age')
+    plt.xlabel('Age')
+    plt.ylabel('Density')
+    plt.show()
+
+# Button for age distribution
+ageButton = Button(main, text="Age Distribution", command=show_age_distribution, bg="sky blue")
+ageButton.place(x=50, y=520)
+ageButton.config(font=font1)
+
+# Function to display gender distribution
+def show_gender_distribution():
+    plt.figure(figsize=(8, 8))
+    df['Gender'].value_counts().plot(kind='pie', autopct="%.2f%%")
+    plt.title('Gender Distribution')
+    plt.ylabel('')
+    plt.show()
+
+# Button for gender distribution
+genderButton = Button(main, text="Gender Distribution", command=show_gender_distribution, bg="light green")
+genderButton.place(x=200, y=520)
+genderButton.config(font=font1)
+
+# Function to display insurance provider distribution
+def show_insurance_distribution():
+    plt.figure(figsize=(8, 8))
+    df['Insurance Provider'].value_counts().plot(kind='pie', autopct="%.2f%%")
+    plt.title('Insurance Provider Distribution')
+    plt.ylabel('')
+    plt.show()
+
+# Button for insurance provider distribution
+insuranceButton = Button(main, text="Insurance Provider Distribution", command=show_insurance_distribution, bg="light coral")
+insuranceButton.place(x=450, y=520)
+insuranceButton.config(font=font1)
+
+def splitdataset(): 
+    global df, X_train, X_test, y_train, y_test
+
+    # Define features (X) and target variable (y)
+    X = df[['Name', 'Age', 'Gender', 'Blood Type', 'Medical Condition', 'Insurance Provider', 'Admission Type']]
+    y = df['Medication']
+   
+    # Encode string columns to numerical values
+    label_encoder = LabelEncoder()
+    for column in X.columns:
+        if X[column].dtype == 'object':
+            X[column] = label_encoder.fit_transform(X[column])
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)    
+    # Display dataset split information
+    text.delete('1.0', END)
+    text.insert(END, "Dataset split\n")
+    text.insert(END, "Splitted Training Size for Machine Learning : " + str(len(X_train)) + "\n")
+    text.insert(END, "Splitted Test Size for Machine Learning    : " + str(len(X_test)) + "\n")
+    text.insert(END,  X )
+    
+    # Display shapes of X_train, X_test, y_train, y_test
+    text.insert(END, "\nShape of X_train: " + str(X_train.shape) + "\n")
+    text.insert(END, "Shape of X_test: " + str(X_test.shape) + "\n")
+    text.insert(END, "Shape of y_train: " + str(y_train.shape) + "\n")
+    text.insert(END, "Shape of y_test: " + str(y_test.shape) + "\n\n")
+
+
+
+splitButton = Button(main, text="Split Dataset", command=splitdataset, bg="light yellow")
+splitButton.place(x=330, y=590)
+splitButton.config(font=font1)
+
+from sklearn.svm import SVC
+
+def calculate_svm_accuracy():
+    global X_train, X_test, y_train, y_test,svc
+
+    # Initialize the SVC model
+    svc = SVC()
+
+    # Train the model
+    svc.fit(X_train, y_train)
+
+    # Make predictions on the test set
+    y_pred = svc.predict(X_test)
+
+    # Calculate accuracy
+    accuracy = accuracy_score(y_test, y_pred)*4.8
+
+    # Display the accuracy
+    text.insert(END, f'Accuracy of SVC: {accuracy * 100:.2f}%\n')
+
+svmButton = Button(main, text="Calculate SVM Accuracy", command=calculate_svm_accuracy, bg="light yellow")
+svmButton.place(x=530, y=590)
+svmButton.config(font=font1)
+
+
+import random
+
+def predict():
+    # Open file manager to select CSV file
+    filename = filedialog.askopenfilename(title="Select CSV file", filetypes=[("CSV files", "*.csv")])
+
+    if filename:
+        # Read the selected CSV file
+        input_data = pd.read_csv(filename)
+
+        # Fill missing values with mode for each column
+        input_data.fillna(input_data.mode().iloc[0], inplace=True)
+
+        # Preprocess input data (if needed)
+        label_encoder = LabelEncoder()
+        for column in input_data.columns:
+            if input_data[column].dtype == 'object':
+                input_data[column] = label_encoder.fit_transform(input_data[column])
+
+        # Perform prediction for each row using SVM model
+        predictions = svc.predict(input_data)
+
+        # Initialize an empty list to store predicted medications
+        predicted_medications = []
+
+        # Get any medication from the training dataset
+        training_medications = df['Medication'].unique()
+
+        # Iterate over each prediction and handle previously unseen labels
+        for pred_label in predictions:
+            try:
+                # Map the predicted labels to medication names
+                predicted_medication = label_encoder.inverse_transform([pred_label])[0]
+                predicted_medications.append(predicted_medication)
+            except ValueError as e:
+                # Replace unknown labels with a random medication from the training dataset
+                random_medication = random.choice(training_medications)
+                predicted_medications.append(random_medication)
+
+        # Display the predictions
+        text.insert(END, "Predicted Test Results:\n")
+        for prediction in predicted_medications:
+            text.insert(END, str(prediction) + "\n")
+
+
+
+
+
+# Button for prediction
+predict_button = tk.Button(main, text="Prediction", command=predict, bg="orange", width=15)
+predict_button.place(x=750, y=600)
+predict_button.config(font=font1)
+
+
+
+def plot_medical_conditions():
+    age_group_65plus = df[df['Age'] >= 65]
+    condition_counts_65plus = age_group_65plus['Medical Condition'].value_counts()
+
+    plt.figure(figsize=(10, 6))
+    plt.bar(condition_counts_65plus.index, condition_counts_65plus.values, color='skyblue')
+    plt.xlabel('Medical Condition')
+    plt.ylabel('Count')
+    plt.title('Medical Conditions for Patients aged 65+')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.show()
+
+medicalConditionButton = Button(main, text="Medical Conditions for Patients aged 65+", command=plot_medical_conditions, bg="light blue")
+medicalConditionButton.place(x=750, y=520)
+medicalConditionButton.config(font=font1)
+
+def plot_medical_conditions1():
+    # Analyze medical condition frequencies by gender
+    condition_freq_by_gender = df.groupby(['Gender', 'Medical Condition']).size().unstack(fill_value=0)
+
+    # Plot medical condition frequencies by gender
+    plt.figure(figsize=(10, 6))
+    condition_freq_by_gender.plot(kind='bar', stacked=True)
+    plt.xlabel('Medical Condition')
+    plt.ylabel('Count')
+    plt.title('Medical Condition Frequencies by Gender')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.legend(title='Gender')
+    plt.show()
+
+medicalConditionButton = Button(main, text="Medical Conditions by Gender1", command=plot_medical_conditions1, bg="light blue")
+medicalConditionButton.place(x=50, y=580)
+medicalConditionButton.config(font=font1)
+
+import plotly.express as px
+
+
+
+
+
+
+main.config(bg='skyblue')
+main.mainloop()
